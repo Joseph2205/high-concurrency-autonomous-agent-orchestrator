@@ -1,0 +1,28 @@
+#!/bin/sh
+
+COMMIT_MSG_FILE="$1"
+
+if [ ! -f "$COMMIT_MSG_FILE" ]; then
+    echo "ERROR: Commit message file not found."
+    exit 1
+fi
+
+COMMIT_MSG=$(head -n 1 "$COMMIT_MSG_FILE")
+
+case "$COMMIT_MSG" in
+    "Merge "*)
+        exit 0
+        ;;
+esac
+
+PATTERN='^(feat|fix|docs|style|refactor|test|chore|perf|build|ci|revert): .{1,72}$'
+
+if ! printf '%s\n' "$COMMIT_MSG" | grep -Eq "$PATTERN"; then
+    echo "ERROR: Invalid commit message!"
+    echo "Required format: type: description"
+    echo "Example: feat: add virtual thread executor"
+    exit 1
+fi
+
+echo "Commit message validation passed."
+exit 0
