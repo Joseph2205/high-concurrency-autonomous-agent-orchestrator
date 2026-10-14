@@ -1,0 +1,46 @@
+
+package com.zaalima.high_concurrency_agent_orchestrator;
+
+import org.springframework.stereotype.Service;
+
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+
+@Service
+public class AgentTaskService {
+
+    private final ExecutorService virtualThreadExecutor;
+
+    public AgentTaskService(ExecutorService virtualThreadExecutor) {
+        this.virtualThreadExecutor = virtualThreadExecutor;
+    }
+
+    public AgentTask submitTask(String taskName) {
+
+        String taskId = UUID.randomUUID().toString();
+
+        AgentTask task = new AgentTask(
+                taskId,
+                taskName,
+                "RUNNING",
+                null
+        );
+
+        virtualThreadExecutor.submit(() -> {
+            try {
+                // Simulate an I/O - bound agent operation
+                Thread.sleep(2000);
+
+                task.setResult("Task completed successfully");
+                task.setStatus("COMPLETED");
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                task.setResult("Task interrupted");
+                task.setStatus("FAILED");
+            }
+        });
+
+        return task;
+    }
+}
