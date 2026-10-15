@@ -1,51 +1,52 @@
 package com.zaalima.high_concurrency_agent_orchestrator;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class AgentTask {
 
-    private String taskId;
-    private String taskName;
-    private String status;
-    private String result;
+    private final String taskId;
+    private final String taskName;
 
-    public AgentTask(){
-    }
+    private final AtomicReference <String> status =
+            new AtomicReference<>("RUNNING");
 
-    public AgentTask(String taskId, String taskName, String status, String result){
+    private final AtomicReference <String> result =
+            new AtomicReference<>(null);
+
+
+    public AgentTask(
+            String taskId,
+            String taskName,
+            String status,
+            String result){
+
         this.taskId = taskId;
         this.taskName = taskName;
-        this.status = status;
-        this.result = result;
+        this.status.set(status);
+        this.result.set(result);
     }
 
-    public String getTaskId(){
+    public String getTaskId() {
         return taskId;
     }
 
-    public void setTaskId(String taskId){
-        this.taskId = taskId;
-    }
-
-    public String getTaskName(){
+    public String getTaskName() {
         return taskName;
     }
 
-    public void setTaskName(String taskName){
-        this.taskName = taskName;
+    public String getStatus() {
+        return status.get();
     }
 
-    public String getStatus(){
-        return status;
+    public void setStatus(String status) {
+        this.status.set(status);
     }
 
-    public void setStatus(String status){
-        this.status = status;
+    public String getResult() {
+        return result.get();
     }
 
-    public String getResult(){
-        return result;
-    }
-
-    public void setResult(String result){
-        this.result = result;
+    public void setResult(String result) {
+        this.result.set(result);
     }
 }

@@ -51,4 +51,9 @@ public class AgentTaskController {
             super("Task not found: " + taskId);
         }
     }
+
+    @GetMapping
+    public java.util.List<AgentTask> getAllTasks() {
+        return agentTaskService.getAllTasks();
+    }
 }

@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentMap;
+import java.util.List;
 
 @Service
 public class AgentTaskService {
@@ -62,5 +63,9 @@ public class AgentTaskService {
 
     public AgentTask getTask(String taskId) {
         return tasks.get(taskId);
+    }
+
+    public List<AgentTask> getAllTasks() {
+        return List.copyOf(tasks.values());
     }
 }
