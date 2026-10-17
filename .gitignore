@@ -1,25 +1,54 @@
-
 # Maven
+
 target/
+.mvn/wrapper/maven-wrapper.jar
 
 # Java
+
 *.class
 *.log
 
-# IDE
+# IDEs
+
 .idea/
 .vscode/
 *.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.factorypath
+.apt_generated/
+.sts4-cache/
+.springBeans
+
+# NetBeans
+
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+/build/
 
 # Operating system
+
 .DS_Store
 Thumbs.db
 
 # Environment files and secrets
+
 .env
 .env.*
 !.env.example
 
 # Local configuration containing secrets
+
 application-local.properties
 application-local.yml
+
+# Spring Boot
+
+HELP.md
+.mvn/wrapper/maven-wrapper.jar
