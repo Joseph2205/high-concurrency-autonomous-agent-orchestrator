@@ -1,15 +1,15 @@
-
 # Maven
+
 target/
 .mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 
 # Java
+
 *.class
 *.log
 
 # IDEs
+
 .idea/
 .vscode/
 *.iml
@@ -24,27 +24,33 @@ target/
 .apt_generated/
 
 # NetBeans
+
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+
+# Gradle
+
+/build/
 
 # Operating system
+
 .DS_Store
 Thumbs.db
 
 # Environment files and secrets
+
 .env
 .env.*
 !.env.example
 
 # Local configuration containing secrets
+
 application-local.properties
 application-local.yml
 
 # Spring Boot
+
 HELP.md
