@@ -37,6 +37,12 @@ public class AgentTaskService {
         try {
             virtualThreadExecutor.submit(() -> {
                 try {
+                    System.out.println(
+                            "Task; " + taskName
+                            + " | Virtual thread: "
+                            + Thread.currentThread().isVirtual()
+                    );
+
                     // Simulate an I/O- bound agent operation
                     Thread.sleep(2000);
 
