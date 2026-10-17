@@ -1,15 +1,37 @@
 
 # Maven
 target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
 # Java
 *.class
 *.log
 
-# IDE
+# IDEs
 .idea/
 .vscode/
 *.iml
+*.iws
+*.ipr
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+.apt_generated/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
 # Operating system
 .DS_Store
@@ -23,3 +45,6 @@ Thumbs.db
 # Local configuration containing secrets
 application-local.properties
 application-local.yml
+
+# Spring Boot
+HELP.md
