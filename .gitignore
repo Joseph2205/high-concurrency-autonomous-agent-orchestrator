@@ -16,12 +16,12 @@ target/
 *.iws
 *.ipr
 .classpath
+.factorypath
 .project
 .settings/
-.factorypath
-.apt_generated/
-.sts4-cache/
 .springBeans
+.sts4-cache/
+.apt_generated/
 
 # NetBeans
 
@@ -30,6 +30,9 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
+
+# Gradle
+
 /build/
 
 # Operating system
@@ -51,4 +54,3 @@ application-local.yml
 # Spring Boot
 
 HELP.md
-.mvn/wrapper/maven-wrapper.jar
