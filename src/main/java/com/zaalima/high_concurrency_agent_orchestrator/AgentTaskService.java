@@ -9,8 +9,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentMap;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class AgentTaskService {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(AgentTaskService.class);
 
     private final ExecutorService virtualThreadExecutor;
 
@@ -37,10 +43,10 @@ public class AgentTaskService {
         try {
             virtualThreadExecutor.submit(() -> {
                 try {
-                    System.out.println(
-                            "Task; " + taskName
-                            + " | Virtual thread: "
-                            + Thread.currentThread().isVirtual()
+                    logger.info(
+                            "Executing task {} on virtual thread: {}",
+                            taskName,
+                            Thread.currentThread().isVirtual()
                     );
 
                     // Simulate an I/O- bound agent operation
@@ -49,19 +55,35 @@ public class AgentTaskService {
                     task.setResult("Task completed successfully");
                     task.setStatus("COMPLETED");
 
+                    logger.info("Task completed successfully. Task ID: {}", taskId);
+
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     task.setResult("Task interrupted");
                     task.setStatus("FAILED");
 
+                    logger.warn("Task was interrupted. Task ID: {}", taskId);
+
                 } catch (Exception e) {
                     task.setResult("Task execution failed");
                     task.setStatus("FAILED");
+
+                    logger.error(
+                            "Task execution failed. Task ID: {}",
+                            taskId,
+                            e
+                    );
                 }
             });
         } catch (RuntimeException e) {
             task.setResult("Task could not be submitted");
             task.setStatus("FAILED");
+
+            logger.error(
+                    "Task submission failed. Task ID: {}",
+                    taskId,
+                    e
+            );
         }
 
         return task;
