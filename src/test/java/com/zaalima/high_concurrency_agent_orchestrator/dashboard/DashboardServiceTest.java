@@ -22,5 +22,8 @@ class DashboardServiceTest {
         assertNotNull(snapshot.taskCounts());
         assertNotNull(snapshot.circuitBreakerState());
         assertTrue(snapshot.bulkheadMaxPermits() > 0);
+        assertNotNull(snapshot.threads());
+        assertTrue(snapshot.threads().virtualThreadExecutor(),
+                "the orchestrator executor must be a virtual-thread executor");
     }
 }

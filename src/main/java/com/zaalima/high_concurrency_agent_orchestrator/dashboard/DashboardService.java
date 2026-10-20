@@ -8,6 +8,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 @Component
 public class DashboardService {
@@ -15,31 +16,39 @@ public class DashboardService {
     private final AgentRegistry registry;
     private final ResilienceRegistry resilienceRegistry;
     private final DashboardTaskProvider taskProvider;
+    private final VirtualThreadMonitor threadMonitor;
+    private final ExecutorService virtualThreadExecutor;
 
     public DashboardService(
             AgentRegistry registry,
             ResilienceRegistry resilienceRegistry,
-            DashboardTaskProvider taskProvider) {
+            DashboardTaskProvider taskProvider,
+            VirtualThreadMonitor threadMonitor,
+            ExecutorService virtualThreadExecutor) {
         this.registry = registry;
         this.resilienceRegistry = resilienceRegistry;
         this.taskProvider = taskProvider;
+        this.threadMonitor = threadMonitor;
+        this.virtualThreadExecutor = virtualThreadExecutor;
     }
 
     public DashboardSnapshot snapshot() {
         CircuitBreaker breaker = resilienceRegistry.circuitBreaker();
         Bulkhead bulkhead = resilienceRegistry.bulkhead();
+        List<AgentInfo> agents = registry.findAll();
 
         return new DashboardSnapshot(
                 registry.getNodeId(),
                 System.currentTimeMillis(),
-                registry.findAll().size(),
-                registry.findAll().stream().mapToLong(AgentInfo::getActiveTasks).sum(),
+                agents.size(),
+                agents.stream().mapToLong(AgentInfo::getActiveTasks).sum(),
                 taskProvider.taskCounts(),
                 taskProvider.recentTasks(25),
                 List.of(),
                 breaker.getState().name(),
                 breaker.getMetrics().getFailureRate(),
                 bulkhead.getMetrics().getAvailableConcurrentCalls(),
-                bulkhead.getMetrics().getMaxAllowedConcurrentCalls());
+                bulkhead.getMetrics().getMaxAllowedConcurrentCalls(),
+                threadMonitor.sample(virtualThreadExecutor));
     }
 }

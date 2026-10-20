@@ -36,6 +36,8 @@
         <div class="card"><div class="label">Failed tasks</div><div class="value red" id="failed">–</div></div>
         <div class="card"><div class="label">Circuit breaker</div><div class="value" id="cb">–</div></div>
         <div class="card"><div class="label">Bulkhead free permits</div><div class="value" id="bh">–</div></div>
+        <div class="card"><div class="label">Live virtual threads</div><div class="value blue" id="vthreads">–</div></div>
+        <div class="card"><div class="label">Platform threads</div><div class="value" id="pthreads">–</div></div>
     </div>
 
     <table>
@@ -65,6 +67,11 @@
 
             $("bh").textContent = `${s.bulkheadAvailablePermits} / ${s.bulkheadMaxPermits}`;
             $("bh").className = "value " + (s.bulkheadAvailablePermits === 0 ? "red" : "green");
+
+            if (s.threads) {
+                $("vthreads").textContent = s.threads.liveVirtualThreads;
+                $("pthreads").textContent = `${s.threads.platformThreadCount} (peak ${s.threads.peakPlatformThreadCount})`;
+            }
 
             $("tasks").innerHTML = (s.recentTasks || []).map(t => `
                 <tr>

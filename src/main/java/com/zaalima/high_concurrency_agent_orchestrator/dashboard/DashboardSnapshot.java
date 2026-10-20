@@ -13,7 +13,8 @@ public record DashboardSnapshot(
         String circuitBreakerState,
         float circuitBreakerFailureRate,
         int bulkheadAvailablePermits,
-        int bulkheadMaxPermits) {
+        int bulkheadMaxPermits,
+        VirtualThreadMonitor.VirtualThreadStats threads) {
 
     public record TaskCounts(long running, long completed, long failed) {
     }
