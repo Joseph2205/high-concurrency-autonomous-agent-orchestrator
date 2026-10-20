@@ -1,0 +1,12 @@
+package com.zaalima.high_concurrency_agent_orchestrator.dto;
+
+import jakarta.validation.constraints.NotBlank;
+
+import java.util.Map;
+
+public record AgentRegistrationRequest(
+        @NotBlank String agentId,
+        @NotBlank String agentName,
+        String endpoint,
+        Map<String, String> metadata) {
+}
