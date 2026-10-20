@@ -45,6 +45,12 @@
         <tbody id="tasks"></tbody>
     </table>
 
+    <h2 style="font-size:15px;margin-top:26px;">Cluster nodes</h2>
+    <table>
+        <thead><tr><th>Node</th><th>State</th><th>Active tasks</th></tr></thead>
+        <tbody id="nodes"></tbody>
+    </table>
+
     <script>
         const $ = (id) => document.getElementById(id);
 
@@ -80,6 +86,16 @@
                     <td>${statusPill(t.status)}</td>
                     <td>${t.virtualThread ? "yes" : "no"}</td>
                 </tr>`).join("");
+
+            const nodes = s.clusterNodes || [];
+            $("nodes").innerHTML = nodes.length === 0
+                ? `<tr><td colspan="3" class="stale">single-node mode (registry.mode=memory)</td></tr>`
+                : nodes.map(n => `
+                    <tr>
+                        <td>${n.nodeId}</td>
+                        <td><span class="pill ${n.alive ? "completed" : "failed"}">${n.alive ? "alive" : "stale"}</span></td>
+                        <td>${n.activeTasks}</td>
+                    </tr>`).join("");
         }
 
         async function poll() {
