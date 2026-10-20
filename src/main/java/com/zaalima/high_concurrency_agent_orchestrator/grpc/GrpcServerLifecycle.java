@@ -2,6 +2,7 @@ package com.zaalima.high_concurrency_agent_orchestrator.grpc;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import com.zaalima.high_concurrency_agent_orchestrator.security.RegistrationTokenValidator;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ public class GrpcServerLifecycle implements SmartLifecycle {
             LoggerFactory.getLogger(GrpcServerLifecycle.class);
 
     private final AgentRegistrationGrpcService registrationService;
+    private final RegistrationTokenValidator tokenValidator;
     private final int port;
     private final boolean enabled;
 
@@ -26,10 +28,12 @@ public class GrpcServerLifecycle implements SmartLifecycle {
 
     public GrpcServerLifecycle(
             AgentRegistrationGrpcService registrationService,
+            RegistrationTokenValidator tokenValidator,
             @Value("${orchestrator.grpc.port:9090}") int port,
             @Value("${orchestrator.grpc.enabled:true}") boolean enabled) {
 
         this.registrationService = registrationService;
+        this.tokenValidator = tokenValidator;
         this.port = port;
         this.enabled = enabled;
     }
@@ -44,6 +48,7 @@ public class GrpcServerLifecycle implements SmartLifecycle {
         try {
             server = ServerBuilder.forPort(port)
                     .addService(registrationService)
+                    .intercept(new RegistrationTokenInterceptor(tokenValidator))
                     .build()
                     .start();
 
