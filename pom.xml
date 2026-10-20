@@ -107,6 +107,10 @@
 			<artifactId>resilience4j-micrometer</artifactId>
 			<version>${resilience4j.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>
