@@ -1,7 +1,7 @@
 package com.zaalima.high_concurrency_agent_orchestrator.grpc;
 
 import com.zaalima.high_concurrency_agent_orchestrator.agent.AgentInfo;
-import com.zaalima.high_concurrency_agent_orchestrator.agent.AgentRegistryService;
+import com.zaalima.high_concurrency_agent_orchestrator.agent.AgentRegistry;
 import com.zaalima.high_concurrency_agent_orchestrator.protocol.AgentRegistrationServiceGrpc;
 import com.zaalima.high_concurrency_agent_orchestrator.protocol.DeregisterAgentRequest;
 import com.zaalima.high_concurrency_agent_orchestrator.protocol.DeregisterAgentResponse;
@@ -22,9 +22,9 @@ public class AgentRegistrationGrpcService
     private static final Logger logger =
             LoggerFactory.getLogger(AgentRegistrationGrpcService.class);
 
-    private final AgentRegistryService registry;
+    private final AgentRegistry registry;
 
-    public AgentRegistrationGrpcService(AgentRegistryService registry) {
+    public AgentRegistrationGrpcService(AgentRegistry registry) {
         this.registry = registry;
     }
 

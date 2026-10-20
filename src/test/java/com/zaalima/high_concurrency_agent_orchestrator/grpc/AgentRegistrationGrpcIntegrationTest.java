@@ -1,6 +1,7 @@
 package com.zaalima.high_concurrency_agent_orchestrator.grpc;
 
-import com.zaalima.high_concurrency_agent_orchestrator.agent.AgentRegistryService;
+import com.zaalima.high_concurrency_agent_orchestrator.agent.AgentRegistry;
+import com.zaalima.high_concurrency_agent_orchestrator.agent.InMemoryAgentRegistry;
 import com.zaalima.high_concurrency_agent_orchestrator.protocol.AgentRegistrationServiceGrpc;
 import com.zaalima.high_concurrency_agent_orchestrator.protocol.DeregisterAgentRequest;
 import com.zaalima.high_concurrency_agent_orchestrator.protocol.DeregisterAgentResponse;
@@ -36,7 +37,7 @@ class AgentRegistrationGrpcIntegrationTest {
     void setUp() throws Exception {
         String name = "in-process-" + UUID.randomUUID();
 
-        AgentRegistryService registry = new AgentRegistryService("test-node");
+        AgentRegistry registry = new InMemoryAgentRegistry("test-node");
         AgentRegistrationGrpcService service = new AgentRegistrationGrpcService(registry);
 
         server = InProcessServerBuilder.forName(name)

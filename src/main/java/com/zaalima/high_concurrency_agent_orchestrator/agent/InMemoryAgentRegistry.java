@@ -1,6 +1,7 @@
 package com.zaalima.high_concurrency_agent_orchestrator.agent;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,16 +11,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Service
-public class AgentRegistryService {
+@ConditionalOnProperty(
+        name = "orchestrator.registry.mode",
+        havingValue = "memory",
+        matchIfMissing = true)
+public class InMemoryAgentRegistry implements AgentRegistry {
 
     private final ConcurrentMap<String, AgentInfo> agents = new ConcurrentHashMap<>();
     private final String nodeId;
 
-    public AgentRegistryService(
+    public InMemoryAgentRegistry(
             @Value("${orchestrator.node-id:node-local}") String nodeId) {
         this.nodeId = nodeId;
     }
 
+    @Override
     public AgentInfo register(
             String agentId,
             String agentName,
@@ -31,6 +37,7 @@ public class AgentRegistryService {
         return info;
     }
 
+    @Override
     public boolean heartbeat(String agentId, long activeTasks) {
         AgentInfo info = agents.get(agentId);
         if (info == null) {
@@ -40,18 +47,22 @@ public class AgentRegistryService {
         return true;
     }
 
+    @Override
     public boolean deregister(String agentId) {
         return agents.remove(agentId) != null;
     }
 
+    @Override
     public Optional<AgentInfo> find(String agentId) {
         return Optional.ofNullable(agents.get(agentId));
     }
 
+    @Override
     public List<AgentInfo> findAll() {
         return List.copyOf(agents.values());
     }
 
+    @Override
     public String getNodeId() {
         return nodeId;
     }

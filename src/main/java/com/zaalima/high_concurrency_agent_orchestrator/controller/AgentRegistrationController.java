@@ -1,7 +1,7 @@
 package com.zaalima.high_concurrency_agent_orchestrator.controller;
 
 import com.zaalima.high_concurrency_agent_orchestrator.agent.AgentInfo;
-import com.zaalima.high_concurrency_agent_orchestrator.agent.AgentRegistryService;
+import com.zaalima.high_concurrency_agent_orchestrator.agent.AgentRegistry;
 import com.zaalima.high_concurrency_agent_orchestrator.dto.AgentDeregisterResponse;
 import com.zaalima.high_concurrency_agent_orchestrator.dto.AgentHeartbeatRequest;
 import com.zaalima.high_concurrency_agent_orchestrator.dto.AgentHeartbeatResponse;
@@ -25,9 +25,9 @@ import java.util.List;
 @RequestMapping("/api/agents")
 public class AgentRegistrationController {
 
-    private final AgentRegistryService registry;
+    private final AgentRegistry registry;
 
-    public AgentRegistrationController(AgentRegistryService registry) {
+    public AgentRegistrationController(AgentRegistry registry) {
         this.registry = registry;
     }
 

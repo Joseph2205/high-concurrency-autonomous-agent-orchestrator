@@ -9,7 +9,7 @@ public class AgentInfo {
     private final String agentName;
     private final String endpoint;
     private final Map<String, String> metadata;
-    private final long registeredAtEpochMs;
+    private volatile long registeredAtEpochMs;
 
     private final AtomicLong activeTasks = new AtomicLong();
     private volatile long lastHeartbeatEpochMs;
@@ -61,5 +61,11 @@ public class AgentInfo {
     public void recordHeartbeat(long currentActiveTasks) {
         this.activeTasks.set(currentActiveTasks);
         this.lastHeartbeatEpochMs = System.currentTimeMillis();
+    }
+
+    void restoreTimestamps(long registeredAt, long lastHeartbeat, long currentActiveTasks) {
+        this.registeredAtEpochMs = registeredAt;
+        this.lastHeartbeatEpochMs = lastHeartbeat;
+        this.activeTasks.set(currentActiveTasks);
     }
 }
