@@ -38,7 +38,15 @@ class AgentRegistrationGrpcIntegrationTest {
         String name = "in-process-" + UUID.randomUUID();
 
         AgentRegistry registry = new InMemoryAgentRegistry("test-node");
-        AgentRegistrationGrpcService service = new AgentRegistrationGrpcService(registry);
+        AgentRegistrationGrpcService service = new AgentRegistrationGrpcService(
+                registry,
+                new com.zaalima.high_concurrency_agent_orchestrator.service
+                        .AgentPayloadService(
+                                registry,
+                                new com.zaalima.high_concurrency_agent_orchestrator
+                                        .AgentTaskService(
+                                                java.util.concurrent.Executors
+                                                        .newVirtualThreadPerTaskExecutor())));
 
         server = InProcessServerBuilder.forName(name)
                 .directExecutor()

@@ -11,6 +11,7 @@ service AgentRegistrationService {
   rpc RegisterAgent (RegisterAgentRequest) returns (RegisterAgentResponse);
   rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
   rpc DeregisterAgent (DeregisterAgentRequest) returns (DeregisterAgentResponse);
+  rpc SubmitPayload (SubmitPayloadRequest) returns (SubmitPayloadResponse);
 }
 
 message RegisterAgentRequest {
@@ -42,4 +43,17 @@ message DeregisterAgentRequest {
 
 message DeregisterAgentResponse {
   bool removed = 1;
+}
+
+message SubmitPayloadRequest {
+  string agent_id = 1;
+  string task_name = 2;
+  map<string, string> payload = 3;
+}
+
+message SubmitPayloadResponse {
+  bool accepted = 1;
+  string task_id = 2;
+  string status = 3;
+  string message = 4;
 }

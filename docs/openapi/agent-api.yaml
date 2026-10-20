@@ -56,6 +56,25 @@ paths:
                 $ref: '#/components/schemas/AgentHeartbeatResponse'
         '404':
           description: Agent not registered
+  /api/agents/payload:
+    post:
+      summary: Submit an execution payload from a registered agent
+      operationId: submitPayload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPayloadRequest'
+      responses:
+        '202':
+          description: Payload accepted and queued as a task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPayloadResponse'
+        '404':
+          description: Agent not registered
   /api/agents/{agentId}:
     delete:
       summary: Deregister an agent
@@ -129,6 +148,29 @@ components:
       properties:
         removed:
           type: boolean
+    AgentPayloadRequest:
+      type: object
+      required: [agentId, taskName]
+      properties:
+        agentId:
+          type: string
+        taskName:
+          type: string
+        payload:
+          type: object
+          additionalProperties:
+            type: string
+    AgentPayloadResponse:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+        taskId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
     AgentSummary:
       type: object
       properties:
