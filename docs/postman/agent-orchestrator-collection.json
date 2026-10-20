@@ -1,0 +1,81 @@
+{
+  "info": {
+    "name": "Agent Orchestrator - Registration API",
+    "description": "REST contract for agent registration, heartbeat and deregistration (Member 3). Set the {{registration_token}} variable when the orchestrator runs with orchestrator.security.registration-token configured.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "registration_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Register Agent",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Registration-Token", "value": "{{registration_token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/agents", "host": ["{{base_url}}"], "path": ["api", "agents"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agentId\": \"agent-001\",\n  \"agentName\": \"analytics-agent\",\n  \"endpoint\": \"http://localhost:9000/callback\",\n  \"metadata\": { \"region\": \"eu-west-1\", \"tier\": \"gold\" }\n}"
+        }
+      }
+    },
+    {
+      "name": "List Agents",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-Registration-Token", "value": "{{registration_token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/agents", "host": ["{{base_url}}"], "path": ["api", "agents"] }
+      }
+    },
+    {
+      "name": "Heartbeat",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Registration-Token", "value": "{{registration_token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/agents/heartbeat", "host": ["{{base_url}}"], "path": ["api", "agents", "heartbeat"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agentId\": \"agent-001\",\n  \"activeTasks\": 4\n}"
+        }
+      }
+    },
+    {
+      "name": "Deregister Agent",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "X-Registration-Token", "value": "{{registration_token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/agents/agent-001",
+          "host": ["{{base_url}}"],
+          "path": ["api", "agents", "agent-001"]
+        }
+      }
+    },
+    {
+      "name": "Register without token (expect 401 when secured)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/api/agents", "host": ["{{base_url}}"], "path": ["api", "agents"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"agentId\": \"agent-no-token\",\n  \"agentName\": \"rogue-agent\"\n}"
+        }
+      }
+    }
+  ]
+}

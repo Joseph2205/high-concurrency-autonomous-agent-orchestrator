@@ -52,9 +52,8 @@ public class AgentRegistrationController {
     public AgentHeartbeatResponse heartbeat(
             @Valid @RequestBody AgentHeartbeatRequest request) {
 
-        boolean alive = registry.heartbeat(
-                request.agentId(),
-                request.activeTasks());
+        long load = request.activeTasks() == null ? 0L : request.activeTasks();
+        boolean alive = registry.heartbeat(request.agentId(), load);
 
         if (!alive) {
             throw new AgentNotRegisteredException(request.agentId());

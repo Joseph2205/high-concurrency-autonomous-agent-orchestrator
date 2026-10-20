@@ -115,6 +115,7 @@ components:
         activeTasks:
           type: integer
           format: int64
+          description: optional; omitted means 0 active tasks
     AgentHeartbeatResponse:
       type: object
       properties:
