@@ -7,6 +7,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.CancellationException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -19,6 +21,9 @@ public class AgentTaskService {
             LoggerFactory.getLogger(AgentTaskService.class);
 
     private final ExecutorService virtualThreadExecutor;
+
+    private final ConcurrentMap<String, Future<?>> runningTasks =
+            new ConcurrentHashMap<>();
 
     private final ConcurrentMap<String, AgentTask> tasks =
             new ConcurrentHashMap<>();
@@ -41,7 +46,7 @@ public class AgentTaskService {
         tasks.put(taskId, task);
 
         try {
-            virtualThreadExecutor.submit(() -> {
+            Future<?> future = virtualThreadExecutor.submit(() -> {
                 try {
                     logger.info(
                             "Executing task {} on virtual thread: {}",
@@ -60,9 +65,9 @@ public class AgentTaskService {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     task.setResult("Task interrupted");
-                    task.setStatus("FAILED");
+                    task.setStatus("CANCELLED");
 
-                    logger.warn("Task was interrupted. Task ID: {}", taskId);
+                    logger.info("Task cancelled or  interrupted. Task ID: {}", taskId);
 
                 } catch (Exception e) {
                     task.setResult("Task execution failed");
@@ -73,8 +78,13 @@ public class AgentTaskService {
                             taskId,
                             e
                     );
+                }finally {
+                    runningTasks.remove(taskId);
                 }
             });
+
+            runningTasks.put(taskId, future);
+
         } catch (RuntimeException e) {
             task.setResult("Task could not be submitted");
             task.setStatus("FAILED");
@@ -87,6 +97,41 @@ public class AgentTaskService {
         }
 
         return task;
+    }
+
+    public boolean cancelTask(String taskId){
+        AgentTask task = tasks.get(taskId);
+
+        if (task == null){
+            logger.warn("Cannot cancel task because it was not found: {}", taskId);
+            return false;
+        }
+
+        if(!"RUNNING".equals(task.getStatus())){
+            logger.info(
+                    "Task cannot be cancelled because its status is {}. Task ID: {}",
+                    task.getStatus(),
+                    taskId
+            );
+            return false;
+        }
+
+        Future<?> future = runningTasks.get(taskId);
+
+        if (future == null){
+            logger.info("Task is no longer running. Task ID: {}", taskId);
+            return false;
+        }
+
+        boolean cancelled = future.cancel(true);
+
+        if(cancelled){
+            task.setStatus("CANCELLED");
+            task.setResult("Task cancelled by request");
+
+            logger.info("Task cancellation requested. Task ID: {}", taskId);
+        }
+        return cancelled;
     }
 
     public AgentTask getTask(String taskId) {

@@ -2,7 +2,10 @@
 package com.zaalima.high_concurrency_agent_orchestrator;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -40,6 +43,28 @@ public class AgentTaskController {
         return task;
     }
 
+//    Cancel a running task
+    @DeleteMapping("/{taskId}")
+    public ResponseEntity<String> cancelTask(
+            @PathVariable String taskId){
+
+        AgentTask task = agentTaskService.getTask(taskId);
+
+        if(task == null){
+            throw new TaskNotFoundException(taskId);
+        }
+
+        boolean cancelled = agentTaskService.cancelTask(taskId);
+
+        if (cancelled){
+            return ResponseEntity.ok("Task cancellation requested");
+        }
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body("Task could not be cancelled. Current status: "
+                + task.getStatus());
+    }
+
     public record TaskRequest(String taskName) {
     }
 
@@ -53,7 +78,7 @@ public class AgentTaskController {
     }
 
     @GetMapping
-    public java.util.List<AgentTask> getAllTasks() {
+    public List<AgentTask> getAllTasks() {
         return agentTaskService.getAllTasks();
     }
 }
