@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestrator Live Dashboard</title>
+    <style>
+        :root { color-scheme: dark; }
+        body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0; padding: 24px; background: #0f1117; color: #e6e6e6; }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        .sub { color: #8b949e; font-size: 13px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; }
+        .card .label { color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+        .card .value { font-size: 26px; font-weight: 600; margin-top: 6px; }
+        .green { color: #3fb950; } .amber { color: #d29922; } .red { color: #f85149; } .blue { color: #58a6ff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 13px; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #21262d; }
+        th { color: #8b949e; font-weight: 500; }
+        .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+        .pill.running { background: #1f6feb33; color: #58a6ff; }
+        .pill.completed { background: #3fb95033; color: #3fb950; }
+        .pill.failed { background: #f8514933; color: #f85149; }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3fb950; margin-right: 6px; }
+        .stale { color: #8b949e; }
+    </style>
+</head>
+<body>
+    <h1>High-Concurrency Orchestrator &mdash; Live Dashboard</h1>
+    <div class="sub"><span id="conn-dot" class="dot"></span><span id="node">connecting…</span></div>
+
+    <div class="grid">
+        <div class="card"><div class="label">Registered agents</div><div class="value blue" id="agents">–</div></div>
+        <div class="card"><div class="label">Running tasks</div><div class="value amber" id="running">–</div></div>
+        <div class="card"><div class="label">Completed tasks</div><div class="value green" id="completed">–</div></div>
+        <div class="card"><div class="label">Failed tasks</div><div class="value red" id="failed">–</div></div>
+        <div class="card"><div class="label">Circuit breaker</div><div class="value" id="cb">–</div></div>
+        <div class="card"><div class="label">Bulkhead free permits</div><div class="value" id="bh">–</div></div>
+        <div class="card"><div class="label">Live virtual threads</div><div class="value blue" id="vthreads">–</div></div>
+        <div class="card"><div class="label">Platform threads</div><div class="value" id="pthreads">–</div></div>
+    </div>
+
+    <table>
+        <thead><tr><th>Task</th><th>Name</th><th>Status</th><th>Virtual thread</th></tr></thead>
+        <tbody id="tasks"></tbody>
+    </table>
+
+    <h2 style="font-size:15px;margin-top:26px;">Cluster nodes</h2>
+    <table>
+        <thead><tr><th>Node</th><th>State</th><th>Active tasks</th></tr></thead>
+        <tbody id="nodes"></tbody>
+    </table>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+
+        function statusPill(status) {
+            const cls = (status || "").toLowerCase();
+            return `<span class="pill ${cls}">${status}</span>`;
+        }
+
+        function render(s) {
+            $("node").textContent = `node ${s.nodeId} · updated ${new Date(s.timestampEpochMs).toLocaleTimeString()}`;
+            $("agents").textContent = s.registeredAgents;
+            $("running").textContent = s.taskCounts.running;
+            $("completed").textContent = s.taskCounts.completed;
+            $("failed").textContent = s.taskCounts.failed;
+
+            const cb = s.circuitBreakerState;
+            const cbEl = $("cb");
+            cbEl.textContent = cb;
+            cbEl.className = "value " + (cb === "OPEN" ? "red" : cb === "HALF_OPEN" ? "amber" : "green");
+
+            $("bh").textContent = `${s.bulkheadAvailablePermits} / ${s.bulkheadMaxPermits}`;
+            $("bh").className = "value " + (s.bulkheadAvailablePermits === 0 ? "red" : "green");
+
+            if (s.threads) {
+                $("vthreads").textContent = s.threads.liveVirtualThreads;
+                $("pthreads").textContent = `${s.threads.platformThreadCount} (peak ${s.threads.peakPlatformThreadCount})`;
+            }
+
+            $("tasks").innerHTML = (s.recentTasks || []).map(t => `
+                <tr>
+                    <td class="stale">${(t.taskId || "").substring(0, 8)}</td>
+                    <td>${t.taskName}</td>
+                    <td>${statusPill(t.status)}</td>
+                    <td>${t.virtualThread ? "yes" : "no"}</td>
+                </tr>`).join("");
+
+            const nodes = s.clusterNodes || [];
+            $("nodes").innerHTML = nodes.length === 0
+                ? `<tr><td colspan="3" class="stale">single-node mode (registry.mode=memory)</td></tr>`
+                : nodes.map(n => `
+                    <tr>
+                        <td>${n.nodeId}</td>
+                        <td><span class="pill ${n.alive ? "completed" : "failed"}">${n.alive ? "alive" : "stale"}</span></td>
+                        <td>${n.activeTasks}</td>
+                    </tr>`).join("");
+        }
+
+        async function poll() {
+            try {
+                const res = await fetch("/api/dashboard/snapshot");
+                render(await res.json());
+                $("conn-dot").style.background = "#3fb950";
+            } catch (e) {
+                $("conn-dot").style.background = "#f85149";
+            }
+        }
+
+        poll();
+        setInterval(poll, 1000);
+    </script>
+</body>
+</html>

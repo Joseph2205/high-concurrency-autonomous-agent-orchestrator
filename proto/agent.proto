@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.zaalima.high_concurrency_agent_orchestrator.protocol";
+option java_outer_classname = "AgentProto";
+
+package zaalima.orchestrator.v1;
+
+// Registration service used by autonomous agents to join the orchestrator.
+service AgentRegistrationService {
+  rpc RegisterAgent (RegisterAgentRequest) returns (RegisterAgentResponse);
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+  rpc DeregisterAgent (DeregisterAgentRequest) returns (DeregisterAgentResponse);
+  rpc SubmitPayload (SubmitPayloadRequest) returns (SubmitPayloadResponse);
+}
+
+message RegisterAgentRequest {
+  string agent_id = 1;
+  string agent_name = 2;
+  string endpoint = 3;
+  map<string, string> metadata = 4;
+}
+
+message RegisterAgentResponse {
+  bool accepted = 1;
+  string message = 2;
+  string node_id = 3;
+}
+
+message HeartbeatRequest {
+  string agent_id = 1;
+  int64 active_tasks = 2;
+}
+
+message HeartbeatResponse {
+  bool alive = 1;
+  int64 server_time_epoch_ms = 2;
+}
+
+message DeregisterAgentRequest {
+  string agent_id = 1;
+}
+
+message DeregisterAgentResponse {
+  bool removed = 1;
+}
+
+message SubmitPayloadRequest {
+  string agent_id = 1;
+  string task_name = 2;
+  map<string, string> payload = 3;
+}
+
+message SubmitPayloadResponse {
+  bool accepted = 1;
+  string task_id = 2;
+  string status = 3;
+  string message = 4;
+}

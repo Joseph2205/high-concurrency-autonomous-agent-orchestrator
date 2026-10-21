@@ -1,0 +1,197 @@
+openapi: 3.0.3
+info:
+  title: Agent Orchestrator - Registration API
+  description: REST twin of the gRPC AgentRegistrationService (proto/agent.proto). Owner: Member 3.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/agents:
+    post:
+      summary: Register an agent with the orchestrator
+      operationId: registerAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentRegistrationRequest'
+      responses:
+        '201':
+          description: Agent registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRegistrationResponse'
+        '400':
+          description: Validation failure
+    get:
+      summary: List registered agents
+      operationId: listAgents
+      responses:
+        '200':
+          description: Current registry snapshot
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentSummary'
+  /api/agents/heartbeat:
+    post:
+      summary: Refresh agent liveness and report load
+      operationId: heartbeat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentHeartbeatRequest'
+      responses:
+        '200':
+          description: Agent alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentHeartbeatResponse'
+        '404':
+          description: Agent not registered
+  /api/agents/payload:
+    post:
+      summary: Submit an execution payload from a registered agent
+      operationId: submitPayload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPayloadRequest'
+      responses:
+        '202':
+          description: Payload accepted and queued as a task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPayloadResponse'
+        '404':
+          description: Agent not registered
+  /api/agents/{agentId}:
+    delete:
+      summary: Deregister an agent
+      operationId: deregisterAgent
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeregisterResponse'
+        '404':
+          description: Agent not registered
+components:
+  schemas:
+    AgentRegistrationRequest:
+      type: object
+      required: [agentId, agentName]
+      properties:
+        agentId:
+          type: string
+          example: agent-001
+        agentName:
+          type: string
+          example: analytics-agent
+        endpoint:
+          type: string
+          example: http://10.0.0.5:9000/callback
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          example: { region: "eu-west-1", tier: "gold" }
+    AgentRegistrationResponse:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+          example: true
+        message:
+          type: string
+        nodeId:
+          type: string
+          example: node-1
+    AgentHeartbeatRequest:
+      type: object
+      required: [agentId]
+      properties:
+        agentId:
+          type: string
+        activeTasks:
+          type: integer
+          format: int64
+          description: optional; omitted means 0 active tasks
+    AgentHeartbeatResponse:
+      type: object
+      properties:
+        alive:
+          type: boolean
+        serverTimeEpochMs:
+          type: integer
+          format: int64
+    AgentDeregisterResponse:
+      type: object
+      properties:
+        removed:
+          type: boolean
+    AgentPayloadRequest:
+      type: object
+      required: [agentId, taskName]
+      properties:
+        agentId:
+          type: string
+        taskName:
+          type: string
+        payload:
+          type: object
+          additionalProperties:
+            type: string
+    AgentPayloadResponse:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+        taskId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+    AgentSummary:
+      type: object
+      properties:
+        agentId:
+          type: string
+        agentName:
+          type: string
+        endpoint:
+          type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        registeredAtEpochMs:
+          type: integer
+          format: int64
+        lastHeartbeatEpochMs:
+          type: integer
+          format: int64
+        activeTasks:
+          type: integer
+          format: int64
+        nodeId:
+          type: string
