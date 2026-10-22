@@ -126,4 +126,18 @@ public class AgentTaskServiceTest {
             assertFalse(service.cancelTask(task.getTaskId()));
         }
     }
+
+    @Test
+    void cancelledTaskShouldNotTransitionToCompleted(){
+        AgentTask task = new AgentTask(
+                "test-id",
+                "Cancellation test",
+                "RUNNING",
+                null
+        );
+
+        assertTrue(task.transitionStatus("RUNNING", "CANCELLED"));
+        assertFalse(task.transitionStatus("RUNNING", "COMPLETED"));
+        assertEquals("CANCELLED", task.getStatus());
+    }
 }
