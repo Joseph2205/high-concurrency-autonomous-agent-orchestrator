@@ -1,3 +1,4 @@
+
 package com.zaalima.high_concurrency_agent_orchestrator;
 
 import org.junit.jupiter.api.Test;
@@ -11,40 +12,38 @@ import static org.junit.jupiter.api.Assertions.*;
 public class AgentTaskServiceTest {
 
     @Test
-    void submitTaskShouldCompleteSuccessfully() throws Exception{
-        try (ExecutorService executer =
-                     Executors.newVirtualThreadPerTaskExecutor()){
+    void submitTaskShouldCompleteSuccessfully() throws Exception {
+        try (ExecutorService executor =
+                     Executors.newVirtualThreadPerTaskExecutor()) {
 
-            AgentTaskService service = new AgentTaskService(executer);
+            AgentTaskService service = new AgentTaskService(executor);
 
             AgentTask task = service.submitTask("Test task");
 
             assertNotNull(task.getTaskId());
-            assertEquals("Test task",task.getTaskName());
+            assertEquals("Test task", task.getTaskName());
 
             long deadline = System.nanoTime()
-                    +TimeUnit.SECONDS.toNanos(5);
+                    + TimeUnit.SECONDS.toNanos(5);
 
             while (!"COMPLETED".equals(task.getStatus())
-            && !"FAILED".equals(task.getStatus())
-            && System.nanoTime() < deadline){
+                    && !"FAILED".equals(task.getStatus())
+                    && System.nanoTime() < deadline) {
                 Thread.sleep(50);
             }
 
             assertEquals("COMPLETED", task.getStatus());
-            assertNotNull(task.getResult());
             assertEquals(
                     "Task completed successfully",
-                    task.getResult().trim()
+                    task.getResult()
             );
-
         }
     }
 
     @Test
-    void submittedTaskShouldAppearInTaskList(){
+    void submittedTaskShouldAppearInTaskList() {
         try (ExecutorService executor =
-                Executors.newVirtualThreadPerTaskExecutor()){
+                     Executors.newVirtualThreadPerTaskExecutor()) {
 
             AgentTaskService service = new AgentTaskService(executor);
 
@@ -55,19 +54,76 @@ public class AgentTaskServiceTest {
                             .anyMatch(t ->
                                     t.getTaskId().equals(task.getTaskId()))
             );
-
         }
     }
 
     @Test
-    void unknownTaskIdShouldReturnNull(){
+    void unknownTaskIdShouldReturnNull() {
         try (ExecutorService executor =
-                Executors.newVirtualThreadPerTaskExecutor()){
+                     Executors.newVirtualThreadPerTaskExecutor()) {
 
             AgentTaskService service = new AgentTaskService(executor);
 
             assertNull(service.getTask("unknown-task-id"));
+        }
+    }
 
+    @Test
+    void runningTaskShouldBeCancelled() throws Exception {
+        try (ExecutorService executor =
+                     Executors.newVirtualThreadPerTaskExecutor()) {
+
+            AgentTaskService service = new AgentTaskService(executor);
+
+            AgentTask task = service.submitTask("Cancellation test");
+
+            long deadline = System.nanoTime()
+                    + TimeUnit.SECONDS.toNanos(2);
+
+            while (!"RUNNING".equals(task.getStatus())
+                    && System.nanoTime() < deadline) {
+                Thread.sleep(10);
+            }
+
+            boolean cancelled = service.cancelTask(task.getTaskId());
+
+            assertTrue(cancelled);
+            assertEquals("CANCELLED", task.getStatus());
+            assertEquals("Task cancelled by request", task.getResult());
+        }
+    }
+
+    @Test
+    void unknownTaskCannotBeCancelled() {
+        try (ExecutorService executor =
+                     Executors.newVirtualThreadPerTaskExecutor()) {
+
+            AgentTaskService service = new AgentTaskService(executor);
+
+            assertFalse(service.cancelTask("unknown-task-id"));
+        }
+    }
+
+    @Test
+    void completedTaskCannotBeCancelled() throws Exception {
+        try (ExecutorService executor =
+                     Executors.newVirtualThreadPerTaskExecutor()) {
+
+            AgentTaskService service = new AgentTaskService(executor);
+
+            AgentTask task = service.submitTask("Completion test");
+
+            long deadline = System.nanoTime()
+                    + TimeUnit.SECONDS.toNanos(5);
+
+            while (!"COMPLETED".equals(task.getStatus())
+                    && !"FAILED".equals(task.getStatus())
+                    && System.nanoTime() < deadline) {
+                Thread.sleep(50);
+            }
+
+            assertEquals("COMPLETED", task.getStatus());
+            assertFalse(service.cancelTask(task.getTaskId()));
         }
     }
 }
