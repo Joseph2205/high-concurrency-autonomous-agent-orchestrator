@@ -42,6 +42,18 @@ public class AgentTask {
         this.status.set(status);
     }
 
+
+    public boolean transitionStatus(String expectedStatus, String newStatus) {
+        String currentStatus = status.get();
+
+        if (!java.util.Objects.equals(currentStatus, expectedStatus)) {
+            return false;
+        }
+
+        return status.compareAndSet(currentStatus, newStatus);
+    }
+
+
     public String getResult() {
         return result.get();
     }

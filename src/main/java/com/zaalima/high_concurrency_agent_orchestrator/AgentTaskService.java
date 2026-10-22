@@ -57,17 +57,23 @@ public class AgentTaskService {
                     // Simulate an I/O- bound agent operation
                     Thread.sleep(2000);
 
-                    task.setResult("Task completed successfully");
-                    task.setStatus("COMPLETED");
+                    if (task.transitionStatus("RUNNING", "COMPLETED")){
+                        task.setResult("Task completed successfully");
 
-                    logger.info("Task completed successfully. Task ID: {}", taskId);
+                        logger.info(
+                                "Task completed successfully. Task ID: {}",
+                                taskId
+                        );
+                    }
 
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    task.setResult("Task interrupted");
-                    task.setStatus("CANCELLED");
 
-                    logger.info("Task cancelled or  interrupted. Task ID: {}", taskId);
+                    if ("RUNNING".equals(task.getStatus())) {
+                        task.setResult("Task interrupted");
+                        task.transitionStatus("RUNNING", "FAILED");
+                    }
+                    logger.warn("Task interrupted. Task ID: {}", taskId);
 
                 } catch (Exception e) {
                     task.setResult("Task execution failed");
@@ -125,8 +131,9 @@ public class AgentTaskService {
 
         boolean cancelled = future.cancel(true);
 
-        if(cancelled){
-            task.setStatus("CANCELLED");
+        if(cancelled
+        && task.transitionStatus("RUNNING", "CANCELLED")){
+
             task.setResult("Task cancelled by request");
 
             logger.info("Task cancellation requested. Task ID: {}", taskId);
