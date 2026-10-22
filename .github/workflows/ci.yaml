@@ -52,6 +52,14 @@ steps:
   - name: Compile application
     run: ./mvnw -B -DskipTests compile
 
+  - name: Check Redis connection
+    run: |
+      docker ps
+      docker run --rm --network host redis:7-alpine redis-cli -h localhost -p 6379 ping
+
   - name: Run tests
+    env:
+      SPRING_DATA_REDIS_HOST: localhost
+      SPRING_DATA_REDIS_PORT: 6379
     run: ./mvnw -B verify
 ```
