@@ -1,5 +1,7 @@
 package com.zaalima.high_concurrency_agent_orchestrator;
 
+import org.springframework.scheduling.config.Task;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 public class AgentTask {
@@ -7,11 +9,10 @@ public class AgentTask {
     private final String taskId;
     private final String taskName;
 
-    private final AtomicReference <String> status =
-            new AtomicReference<>("RUNNING");
+    private record TaskState(String status, String result){}
 
-    private final AtomicReference <String> result =
-            new AtomicReference<>(null);
+    private final AtomicReference <TaskState> state;
+
 
 
     public AgentTask(
@@ -22,8 +23,9 @@ public class AgentTask {
 
         this.taskId = taskId;
         this.taskName = taskName;
-        this.status.set(status);
-        this.result.set(result);
+        this.state = new AtomicReference<>(
+                new TaskState(status, result)
+        );
     }
 
     public String getTaskId() {
@@ -35,30 +37,71 @@ public class AgentTask {
     }
 
     public String getStatus() {
-        return status.get();
+        return state.get().status();
     }
 
-    public void setStatus(String status) {
-        this.status.set(status);
+    public String getResult(){
+        return state.get().result();
+    }
+
+    public void setStatus(String newStatus){
+        state.updateAndGet(current ->
+                new TaskState(newStatus, current.result())
+        );
+    }
+
+    public void setResult(String newResult){
+        state.updateAndGet(current ->
+                new TaskState(current.status(), newResult)
+        );
     }
 
 
-    public boolean transitionStatus(String expectedStatus, String newStatus) {
-        String currentStatus = status.get();
+    public boolean transitionStatus(
+            String expectedStatus,
+            String newStatus) {
 
-        if (!java.util.Objects.equals(currentStatus, expectedStatus)) {
-            return false;
+        while (true) {
+            TaskState current = state.get();
+
+            if (!java.util.Objects.equals(
+                    current.status(), expectedStatus)) {
+                return false;
+            }
+
+            TaskState updated = new TaskState(
+                    newStatus,
+                    current.result()
+            );
+
+            if (state.compareAndSet(current, updated)) {
+                return true;
+            }
         }
-
-        return status.compareAndSet(currentStatus, newStatus);
     }
 
 
-    public String getResult() {
-        return result.get();
-    }
+   public boolean transition(
+           String expectedStatus,
+           String newStatus,
+           String newResult){
 
-    public void setResult(String result) {
-        this.result.set(result);
-    }
+        while (true){
+            TaskState current = state.get();
+
+            if (!java.util.Objects.equals(
+                    current.status(), expectedStatus)){
+                return false;
+            }
+
+            TaskState updated = new TaskState(
+                    newStatus,
+                    newResult
+            );
+
+            if (state.compareAndSet(current, updated)){
+                return true;
+            }
+        }
+   }
 }

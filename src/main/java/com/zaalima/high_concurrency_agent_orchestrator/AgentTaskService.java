@@ -57,8 +57,10 @@ public class AgentTaskService {
                     // Simulate an I/O- bound agent operation
                     Thread.sleep(2000);
 
-                    if (task.transitionStatus("RUNNING", "COMPLETED")){
-                        task.setResult("Task completed successfully");
+                    if (task.transition(
+                            "RUNNING",
+                            "COMPLETED",
+                            "Task completed successfully")){
 
                         logger.info(
                                 "Task completed successfully. Task ID: {}",
@@ -69,15 +71,26 @@ public class AgentTaskService {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
 
-                    if ("RUNNING".equals(task.getStatus())) {
-                        task.setResult("Task interrupted");
-                        task.transitionStatus("RUNNING", "FAILED");
+                    boolean markedFailed = task.transition(
+                            "RUNNING",
+                            "FAILED",
+                            "Task interrupted"
+                    );
+
+                    if (markedFailed) {
+                        logger.warn(
+                                "Task interrupted. Task ID: {}",
+                                taskId
+                        );
                     }
-                    logger.warn("Task interrupted. Task ID: {}", taskId);
+
 
                 } catch (Exception e) {
-                    task.setResult("Task execution failed");
-                    task.setStatus("FAILED");
+                    boolean markedFailed = task.transition(
+                            "RUNNING",
+                            "FAILED",
+                            "Task execution failed"
+                    );
 
                     logger.error(
                             "Task execution failed. Task ID: {}",
@@ -91,9 +104,16 @@ public class AgentTaskService {
 
             runningTasks.put(taskId, future);
 
+            if (future.isDone()){
+                runningTasks.remove(taskId, future);
+            }
+
         } catch (RuntimeException e) {
-            task.setResult("Task could not be submitted");
-            task.setStatus("FAILED");
+            task.transition(
+                    "RUNNING",
+                    "FAILED",
+                    "Task could not be submitted"
+            );
 
             logger.error(
                     "Task submission failed. Task ID: {}",
@@ -113,33 +133,49 @@ public class AgentTaskService {
             return false;
         }
 
-        if(!"RUNNING".equals(task.getStatus())){
+        Future<?> future = runningTasks.get(taskId);
+
+        if(future == null){
             logger.info(
-                    "Task cannot be cancelled because its status is {}. Task ID: {}",
-                    task.getStatus(),
+                    "Task  is no longer running. Task ID: {}",
                     taskId
             );
             return false;
         }
 
-        Future<?> future = runningTasks.get(taskId);
 
-        if (future == null){
-            logger.info("Task is no longer running. Task ID: {}", taskId);
+        boolean markedCancelled = task.transition(
+                "RUNNING",
+                "CANCELLED",
+                "Task cancelled by request"
+        );
+
+        if(!markedCancelled){
+
+            logger.info(
+                    "Task cannot be cancelled because its status is {}. Task ID: {}",
+                    task.getStatus(),
+                    taskId);
+
             return false;
         }
 
-        boolean cancelled = future.cancel(true);
+        boolean cancellationRequested = future.cancel(true);
 
-        if(cancelled
-        && task.transitionStatus("RUNNING", "CANCELLED")){
-
-            task.setResult("Task cancelled by request");
-
+        if (cancellationRequested){
             logger.info("Task cancellation requested. Task ID: {}", taskId);
+        }else {
+            logger.warn(
+                    "Task status was marked cancelled, but execution cancellation was not accepted. Task ID: {}",
+                    taskId
+            );
         }
-        return cancelled;
+
+        return cancellationRequested;
+
     }
+
+
 
     public AgentTask getTask(String taskId) {
         return tasks.get(taskId);

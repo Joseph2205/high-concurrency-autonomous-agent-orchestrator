@@ -140,4 +140,29 @@ public class AgentTaskServiceTest {
         assertFalse(task.transitionStatus("RUNNING", "COMPLETED"));
         assertEquals("CANCELLED", task.getStatus());
     }
+
+    @Test
+    void cancelledTaskShouldKeepConsistentStatusAndResult() throws Exception{
+
+        try (ExecutorService executor =
+                Executors.newVirtualThreadPerTaskExecutor()){
+
+            AgentTaskService service = new AgentTaskService(executor);
+
+            AgentTask task = service.submitTask("Consistency test");
+
+            boolean cancelled = service.cancelTask(task.getTaskId());
+
+            assertTrue(cancelled);
+
+            assertEquals("CANCELLED", task.getStatus());
+            assertEquals("Task cancelled by request", task.getResult());
+
+//            A second cancellation should not change the final state.
+            assertFalse(service.cancelTask(task.getTaskId()));
+
+            assertEquals("CANCELLED", task.getStatus());
+            assertEquals("Task cancelled by request", task.getResult());
+        }
+    }
 }
