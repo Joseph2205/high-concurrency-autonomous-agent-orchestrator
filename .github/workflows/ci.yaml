@@ -23,7 +23,6 @@ build-and-test:
 name: Build and Test
 runs-on: ubuntu-latest
 
-```
 services:
   redis:
     image: redis:7-alpine
