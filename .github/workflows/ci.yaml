@@ -4,15 +4,13 @@ on:
 push:
 branches:
 - main
-- "feature/**"
-- "fix/**"
-- "integration/**"
-
+- 'feature/**'
+- 'fix/**'
+- 'integration/**'
 pull_request:
 branches:
 - main
 - integration
-
 workflow_dispatch:
 
 permissions:
@@ -42,7 +40,7 @@ steps:
     uses: actions/setup-java@v4
     with:
       distribution: temurin
-      java-version: "21"
+      java-version: '21'
       cache: maven
 
   - name: Make Maven Wrapper executable
@@ -59,7 +57,7 @@ steps:
   - name: Run tests
     env:
       SPRING_DATA_REDIS_HOST: localhost
-      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_DATA_REDIS_PORT: '6379'
       ORCHESTRATOR_REGISTRY_MODE: redis
     run: ./mvnw -B verify
 
