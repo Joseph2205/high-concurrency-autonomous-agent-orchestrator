@@ -56,8 +56,12 @@ jobs:
           docker ps
           docker run --rm --network host redis:7-alpine redis-cli -h localhost -p 6379 ping
 
-      - name: Run tests
-        env:
-          SPRING_DATA_REDIS_HOST: localhost
-          SPRING_DATA_REDIS_PORT: 6379
-        run: ./mvnw -B verify
+  
+
+  - name: Run tests
+    env:
+      SPRING_DATA_REDIS_HOST: localhost
+      SPRING_DATA_REDIS_PORT: "6379"
+      ORCHESTRATOR_REGISTRY_MODE: redis
+    run: ./mvnw -B verify
+
