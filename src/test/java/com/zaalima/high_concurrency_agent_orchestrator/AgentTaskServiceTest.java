@@ -165,4 +165,44 @@ public class AgentTaskServiceTest {
             assertEquals("Task cancelled by request", task.getResult());
         }
     }
+
+    @Test
+    void multipleTasksShouldEcecuteConcurrently() throws Exception{
+
+        try (ExecutorService executor =
+                Executors.newVirtualThreadPerTaskExecutor()){
+
+            AgentTaskService service = new AgentTaskService(executor);
+
+            long startTime = System.nanoTime();
+
+            AgentTask task1 = service.submitTask("Concurrent task 1");
+            AgentTask task2 = service.submitTask("Concurrent task 2");
+            AgentTask task3 = service.submitTask("Concurrent task 3");
+
+            long deadline = System.nanoTime()
+                    +TimeUnit.SECONDS.toNanos(5);
+
+            while ((!"COMPLETED".equals(task1.getStatus())
+            || ! "COMPLETED".equals(task2.getStatus())
+            || ! "COMPLETED".equals(task3.getStatus()))
+            && System.nanoTime()< deadline){
+                Thread.sleep(25);
+            }
+
+            long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(
+                    System.nanoTime() - startTime
+            );
+
+            assertEquals("COMPLETED", task1.getStatus());
+            assertEquals("COMPLETED", task2.getStatus());
+            assertEquals("COMPLETED", task3.getStatus());
+
+            assertTrue(
+                    elapsedMillis< 5000,
+                    "All tasks should finish within the timeout"
+            );
+
+        }
+    }
 }
