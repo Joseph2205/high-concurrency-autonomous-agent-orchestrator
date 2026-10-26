@@ -6,6 +6,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import com.zaalima.high_concurrency_agent_orchestrator.AbstractRedisIT;
 
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         properties = "orchestrator.security.registration-token=test-secret")
 @AutoConfigureMockMvc
-class RegistrationTokenIntegrationTest {
+class RegistrationTokenIntegrationTest extends AbstractRedisIT {
 
     @Autowired
     private MockMvc mockMvc;

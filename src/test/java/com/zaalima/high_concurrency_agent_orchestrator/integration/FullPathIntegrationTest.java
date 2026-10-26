@@ -1,13 +1,11 @@
 package com.zaalima.high_concurrency_agent_orchestrator.integration;
 
-import com.zaalima.high_concurrency_agent_orchestrator.AgentTask;
+import com.zaalima.high_concurrency_agent_orchestrator.AbstractRedisIT;
 import com.zaalima.high_concurrency_agent_orchestrator.agent.AgentRegistry;
 import com.zaalima.high_concurrency_agent_orchestrator.resilience.ExternalServiceClient;
-import com.zaalima.high_concurrency_agent_orchestrator.resilience.FlakyExternalService;
 import com.zaalima.high_concurrency_agent_orchestrator.service.AgentPayloadService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Map;
 
@@ -21,8 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * register (M3) -> registry (M3) -> resilience-guarded upstream call (M3/M4)
  * -> payload submission (M3) -> virtual-thread execution (M2).
  */
-@SpringBootTest
-class FullPathIntegrationTest {
+class FullPathIntegrationTest extends AbstractRedisIT {
 
     @Autowired
     private AgentRegistry registry;
