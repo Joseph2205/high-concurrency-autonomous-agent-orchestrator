@@ -2,13 +2,13 @@ package com.zaalima.high_concurrency_agent_orchestrator.dashboard;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+
+import com.zaalima.high_concurrency_agent_orchestrator.AbstractRedisIT;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest
-class DashboardServiceTest {
+class DashboardServiceTest extends AbstractRedisIT {
 
     @Autowired
     private DashboardService dashboardService;
