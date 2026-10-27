@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.CancellationException;
+import java.util.concurrent.FutureTask;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -46,7 +46,7 @@ public class AgentTaskService {
         tasks.put(taskId, task);
 
         try {
-            Future<?> future = virtualThreadExecutor.submit(() -> {
+            FutureTask<Void> future = new FutureTask<>(() ->  {
                 try {
                     logger.info(
                             "Executing task {} on virtual thread: {}",
@@ -105,23 +105,32 @@ public class AgentTaskService {
                         );
                     }
                 }
-            }finally {
-                    runningTasks.remove(taskId);
+            }
+                return null;
+            });
+
+            // Register the future before execution starts.
+            runningTasks.put(taskId, future);
+
+            // Execute on the configured virtual-thread executor.
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    future.run();
+                } finally {
+                    runningTasks.remove(taskId, future);
                 }
             });
 
-            runningTasks.put(taskId, future);
-
-            if (future.isDone()){
-                runningTasks.remove(taskId, future);
-            }
-
         } catch (RuntimeException e) {
-            task.transition(
-                    "RUNNING",
-                    "FAILED",
-                    "Task could not be submitted"
-            );
+            runningTasks.remove(taskId);
+
+            synchronized (task) {
+                task.transition(
+                        "RUNNING",
+                        "FAILED",
+                        "Task could not be submitted"
+                );
+            }
 
             logger.error(
                     "Task submission failed. Task ID: {}",
