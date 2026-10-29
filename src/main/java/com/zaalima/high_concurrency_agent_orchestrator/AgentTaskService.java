@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.CancellationException;
+import java.util.concurrent.FutureTask;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -46,7 +46,7 @@ public class AgentTaskService {
         tasks.put(taskId, task);
 
         try {
-            Future<?> future = virtualThreadExecutor.submit(() -> {
+            FutureTask<Void> future = new FutureTask<>(() ->  {
                 try {
                     logger.info(
                             "Executing task {} on virtual thread: {}",
@@ -57,63 +57,80 @@ public class AgentTaskService {
                     // Simulate an I/O- bound agent operation
                     Thread.sleep(2000);
 
-                    if (task.transition(
-                            "RUNNING",
-                            "COMPLETED",
-                            "Task completed successfully")){
+                    synchronized (task) {
+                        if (task.transition(
+                                "RUNNING",
+                                "COMPLETED",
+                                "Task completed successfully")) {
 
-                        logger.info(
-                                "Task completed successfully. Task ID: {}",
-                                taskId
-                        );
+                            logger.info(
+                                    "Task completed successfully. Task ID: {}",
+                                    taskId
+                            );
+                        }
                     }
 
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
 
-                    boolean markedFailed = task.transition(
-                            "RUNNING",
-                            "FAILED",
-                            "Task interrupted"
-                    );
-
-                    if (markedFailed) {
-                        logger.warn(
-                                "Task interrupted. Task ID: {}",
-                                taskId
+                    synchronized (task) {
+                        boolean markedFailed = task.transition(
+                                "RUNNING",
+                                "FAILED",
+                                "Task interrupted"
                         );
+
+                        if (markedFailed) {
+                            logger.warn(
+                                    "Task interrupted. Task ID: {}",
+                                    taskId
+                            );
+                        }
                     }
 
 
-                } catch (Exception e) {
+                }  catch (Exception e) {
+                synchronized (task) {
                     boolean markedFailed = task.transition(
                             "RUNNING",
                             "FAILED",
                             "Task execution failed"
                     );
 
-                    logger.error(
-                            "Task execution failed. Task ID: {}",
-                            taskId,
-                            e
-                    );
-                }finally {
-                    runningTasks.remove(taskId);
+                    if (markedFailed) {
+                        logger.error(
+                                "Task execution failed. Task ID: {}",
+                                taskId,
+                                e
+                        );
+                    }
+                }
+            }
+                return null;
+            });
+
+            // Register the future before execution starts.
+            runningTasks.put(taskId, future);
+
+            // Execute on the configured virtual-thread executor.
+            virtualThreadExecutor.execute(() -> {
+                try {
+                    future.run();
+                } finally {
+                    runningTasks.remove(taskId, future);
                 }
             });
 
-            runningTasks.put(taskId, future);
-
-            if (future.isDone()){
-                runningTasks.remove(taskId, future);
-            }
-
         } catch (RuntimeException e) {
-            task.transition(
-                    "RUNNING",
-                    "FAILED",
-                    "Task could not be submitted"
-            );
+            runningTasks.remove(taskId);
+
+            synchronized (task) {
+                task.transition(
+                        "RUNNING",
+                        "FAILED",
+                        "Task could not be submitted"
+                );
+            }
 
             logger.error(
                     "Task submission failed. Task ID: {}",
@@ -125,55 +142,61 @@ public class AgentTaskService {
         return task;
     }
 
-    public boolean cancelTask(String taskId){
+
+    public boolean cancelTask(String taskId) {
         AgentTask task = tasks.get(taskId);
 
-        if (task == null){
+        if (task == null) {
             logger.warn("Cannot cancel task because it was not found: {}", taskId);
             return false;
         }
 
-        Future<?> future = runningTasks.get(taskId);
+        synchronized (task) {
+            Future<?> future = runningTasks.get(taskId);
 
-        if(future == null){
-            logger.info(
-                    "Task  is no longer running. Task ID: {}",
-                    taskId
+            if (future == null) {
+                logger.info("Task is no longer running. Task ID: {}", taskId);
+                return false;
+            }
+
+            if (!"RUNNING".equals(task.getStatus())) {
+                logger.info(
+                        "Task cannot be cancelled because its status is {}. Task ID: {}",
+                        task.getStatus(),
+                        taskId
+                );
+                return false;
+            }
+
+            boolean cancellationRequested = future.cancel(true);
+
+            if (!cancellationRequested) {
+                logger.info(
+                        "Cancellation request was not accepted. Task ID: {}",
+                        taskId
+                );
+                return false;
+            }
+
+            boolean markedCancelled = task.transition(
+                    "RUNNING",
+                    "CANCELLED",
+                    "Task cancelled by request"
             );
-            return false;
-        }
 
+            if (!markedCancelled) {
+                logger.warn(
+                        "Could not update task status after cancellation. Task ID: {}",
+                        taskId
+                );
+                return false;
+            }
 
-        boolean markedCancelled = task.transition(
-                "RUNNING",
-                "CANCELLED",
-                "Task cancelled by request"
-        );
-
-        if(!markedCancelled){
-
-            logger.info(
-                    "Task cannot be cancelled because its status is {}. Task ID: {}",
-                    task.getStatus(),
-                    taskId);
-
-            return false;
-        }
-
-        boolean cancellationRequested = future.cancel(true);
-
-        if (cancellationRequested){
             logger.info("Task cancellation requested. Task ID: {}", taskId);
-        }else {
-            logger.warn(
-                    "Task status was marked cancelled, but execution cancellation was not accepted. Task ID: {}",
-                    taskId
-            );
+            return true;
         }
-
-        return cancellationRequested;
-
     }
+
 
 
 
