@@ -9,6 +9,13 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 @Configuration
 public class RedisPubSubConfig {
 
+    /**
+     * Defines the Redis Pub/Sub channel used for broadcasting
+     * cluster node events between orchestrator instances.
+     */
+    public static final String NODE_EVENTS_CHANNEL =
+            "orchestrator:node-events";
+
     public static final String NODE_EVENTS_CHANNEL =
             "orchestrator:node-events";
 
