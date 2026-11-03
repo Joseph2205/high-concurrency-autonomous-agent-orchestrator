@@ -1,4 +1,4 @@
-package com.zaalima.high_concurrency_agent_orchestrator.messaging;
+ package com.zaalima.high_concurrency_agent_orchestrator.messaging;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +9,9 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 @Configuration
 public class RedisPubSubConfig {
 
+    /**
+     * Redis Pub/Sub channel for broadcasting cluster node events.
+     */
     public static final String NODE_EVENTS_CHANNEL =
             "orchestrator:node-events";
 
